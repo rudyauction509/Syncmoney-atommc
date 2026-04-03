@@ -169,10 +169,11 @@ public final class EconomyWriteQueue {
     public EconomyEvent poll(long timeout, java.util.concurrent.TimeUnit unit) throws InterruptedException {
         EconomyEvent event = queue.poll(timeout, unit);
         if (event != null) {
-            AtomicInteger count = pendingCounts.get(event.uuid());
-            if (count != null && count.decrementAndGet() <= 0) {
-                pendingCounts.remove(event.uuid());
-            }
+            pendingCounts.computeIfAbsent(event.playerUuid(), k -> new AtomicInteger(0))
+                        .updateAndGet(current -> {
+                            int newVal = current - 1;
+                            return newVal >= 0 ? newVal : 0;
+                        });
         }
         return event;
     }
@@ -205,14 +206,13 @@ public final class EconomyWriteQueue {
                 }
             }
 
-            if (removed > 0) {
-                AtomicInteger count = pendingCounts.get(uuid);
-                if (count != null) {
-                    int newCount = count.addAndGet(-removed);
-                    if (newCount <= 0) {
-                        pendingCounts.remove(uuid);
-                    }
-                }
+            final int removedCount = removed;
+            if (removedCount > 0) {
+                pendingCounts.computeIfAbsent(uuid, k -> new AtomicInteger(0))
+                            .updateAndGet(current -> {
+                                int newVal = current - removedCount;
+                                return newVal >= 0 ? newVal : 0;
+                            });
             }
 
             return removed;
@@ -251,5 +251,40 @@ public final class EconomyWriteQueue {
     public int getPendingCount(UUID uuid) {
         AtomicInteger count = pendingCounts.get(uuid);
         return count != null ? count.get() : 0;
+    }
+
+    /**
+     * [SYNC-ECO-113] Emergency clear pending count for a player.
+     * Used when transfer guard times out to prevent permanent player blocking.
+     * This only clears the pending count tracking - actual events in queue will be
+     * processed normally by the consumer thread.
+     *
+     * @param uuid Player UUID
+     */
+    public void emergencyClearPending(UUID uuid) {
+        pendingCounts.remove(uuid);
+    }
+
+    /**
+     * [SYNC-ECO-114] Clear pending tracking without removing queue events.
+     * Used only when player transfer guard times out - tracking is reset because
+     * the player may have disconnected and we cannot rely on tracking state.
+     * Actual events remain in queue and will be processed normally by consumer.
+     *
+     * @param uuid Player UUID
+     */
+    public void clearPendingTracking(UUID uuid) {
+        pendingCounts.remove(uuid);
+    }
+
+    /**
+     * [SYNC-ECO-115] Drain ALL pending events for a player from the queue.
+     * Returns the number of events actually removed.
+     *
+     * @param uuid Player UUID
+     * @return Number of events drained
+     */
+    public int drainAllPendingForPlayer(UUID uuid) {
+        return drainPendingForPlayer(uuid, Integer.MAX_VALUE);
     }
 }

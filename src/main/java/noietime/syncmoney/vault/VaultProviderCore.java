@@ -17,6 +17,7 @@ import org.bukkit.plugin.Plugin;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * [SYNC-VAULT-001] Core Vault Economy API wrapper for Syncmoney.
@@ -32,6 +33,9 @@ public class VaultProviderCore implements Economy {
     private final String currencyName;
 
     private volatile boolean enabled = false;
+
+    private final AtomicInteger orphanDepositCount = new AtomicInteger(0);
+    private static final int ORPHAN_LOG_INTERVAL = 100;
 
     private final VaultPlayerHandler playerHandler;
     private final VaultTransferHandler transferHandler;
@@ -277,11 +281,13 @@ public class VaultProviderCore implements Economy {
         }
 
         if (pendingTransfer == null) {
-            // [FIX-VAULT-ORPHAN] No correlated withdrawal found.
-            // Instead of rejecting, process as PLUGIN_DEPOSIT to prevent money loss
-            // when high-frequency transactions cause race conditions in the pairing logic.
-            plugin.getLogger().warning("No corresponding withdrawal found for VAULT_DEPOSIT: " + uuid +
-                " amount " + amountBd + ". Processing as PLUGIN_DEPOSIT to prevent money loss.");
+
+            int count = orphanDepositCount.incrementAndGet();
+            plugin.getLogger().fine("No corresponding withdrawal found for VAULT_DEPOSIT: " + uuid +
+                " amount " + amountBd + ". Processing as PLUGIN_DEPOSIT.");
+            if (count > 0 && count % ORPHAN_LOG_INTERVAL == 0) {
+                plugin.getLogger().info("[Vault-Orphan-Recovery] " + count + " orphan deposits processed since startup (cross-server expected behavior).");
+            }
 
             if (economyFacade.isPlayerLocked(uuid)) {
                 return new EconomyResponse(0, 0.0, EconomyResponse.ResponseType.FAILURE,

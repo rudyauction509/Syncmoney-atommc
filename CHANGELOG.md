@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-04-03
+
+### Fixed
+
+#### Folia + Paper Cross-Server Environment
+- **Orphan VAULT_DEPOSIT Log Spam**: Reduced log level from WARNING to FINE and batched summary output (every 100 events) to prevent console spam in cross-server setups.
+- **Player Transfer Block**: Fixed players getting permanently stuck during teleport when pending economic events existed. Transfer now forces after timeout and clears tracking state to prevent deadlock.
+
+#### Write Queue & Overflow Handling
+- **Backpressure Threshold**: Lowered from 80% to 70% for earlier rejection of new events under heavy load.
+- **Overflow WAL Recovery**: Added `replayOverflowEvents()` on startup to recover dropped events from Write-Ahead Log.
+- **DB Fallback**: Added direct DB write fallback when `DbWriteQueue` is full.
+
+---
+
 ## [1.1.2] - 2026-03-22
 
 ### Fixed

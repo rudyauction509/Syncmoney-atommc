@@ -271,15 +271,17 @@ public final class EconomyEventConsumer implements Runnable {
             auditLogger.logCriticalFailure(playerName, failed.event(), failureDuration);
         }
 
-        Player player = Bukkit.getServer().getPlayer(playerUuid);
-        if (player != null && player.isOnline()) {
-            String warnMessage = ((noietime.syncmoney.Syncmoney) plugin).getMessage("general.sync-error");
-            if (warnMessage != null) {
-                noietime.syncmoney.util.MessageHelper.sendMessage(player, warnMessage);
+        plugin.getServer().getGlobalRegionScheduler().run(plugin, task -> {
+            Player player = Bukkit.getPlayer(playerUuid);
+            if (player != null && player.isOnline()) {
+                String warnMessage = ((noietime.syncmoney.Syncmoney) plugin).getMessage("general.sync-error");
+                if (warnMessage != null) {
+                    noietime.syncmoney.util.MessageHelper.sendMessage(player, warnMessage);
+                }
+                plugin.getLogger()
+                        .warning("Player " + player.getName() + " has pending sync issues - data may need manual review");
             }
-            plugin.getLogger()
-                    .warning("Player " + player.getName() + " has pending sync issues - data may need manual review");
-        }
+        });
     }
 
     @Override

@@ -1,7 +1,7 @@
 package noietime.syncmoney.economy;
 
 /**
- * [SYNC-ECO-110] OverflowLog interface for Write-Ahead Log of dropped economy events.
+ * [SYNC-ECO-116] OverflowLog interface for Write-Ahead Log of dropped economy events.
  * Implementations can use file system or Redis for storage.
  */
 public interface OverflowLogInterface {

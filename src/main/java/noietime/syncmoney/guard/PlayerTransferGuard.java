@@ -81,7 +81,8 @@ public final class PlayerTransferGuard implements Listener {
 
             if (currentWaited >= Constants.MAX_WAIT_MS) {
                 waitingTransfers.remove(uuid);
-                logger.warning("Player " + player.getName() + " transfer forced after " + Constants.MAX_WAIT_MS + "ms wait (pending: " + writeQueue.getPendingCount(uuid) + " events)");
+                writeQueue.clearPendingTracking(uuid);
+                logger.warning("Player " + player.getName() + " transfer forced after " + Constants.MAX_WAIT_MS + "ms wait. Events will be processed asynchronously by consumer.");
                 plugin.getServer().getGlobalRegionScheduler().run(plugin, teleportTask -> {
                     player.teleport(event.getTo());
                 });
@@ -134,27 +135,14 @@ public final class PlayerTransferGuard implements Listener {
             }
 
             if (writeQueue.hasPending(uuid)) {
-                long startWait = System.currentTimeMillis();
-                while (writeQueue.hasPending(uuid) && (System.currentTimeMillis() - startWait) < 200) {
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-
-                if (writeQueue.hasPending(uuid)) {
-                    logger.warning("Player " + event.getPlayer().getName() + " quit with " +
-                        writeQueue.getPendingCount(uuid) + " pending transactions (data already saved to Redis).");
-                } else {
-                    logger.fine("Player " + event.getPlayer().getName() + " pending transactions cleared.");
-                }
+                logger.warning("Player " + event.getPlayer().getName() + " quit with " +
+                    writeQueue.getPendingCount(uuid) + " pending transactions (data already saved to Redis). Events will be processed asynchronously.");
             } else {
                 logger.fine("Player " + event.getPlayer().getName() + " pending transactions drained successfully.");
             }
         }
 
+        writeQueue.clearPendingTracking(uuid);
         waitingTransfers.remove(uuid);
     }
 
