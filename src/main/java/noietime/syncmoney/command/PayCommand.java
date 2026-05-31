@@ -137,9 +137,20 @@ public final class PayCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd,
             @NotNull String alias, @NotNull String[] args) {
+
+        
         if (args.length == 1) {
-    return null;
-        }
+    String partial = args[0].toLowerCase();
+
+        return plugin.getRedisManager()
+            .getAllOnlinePlayers()
+            .stream()
+            .filter(name -> name.toLowerCase().startsWith(partial))
+            .sorted()
+            .toList();
+}
+
+        
         if (args.length == 2) {
             java.util.List<String> suggestions = new java.util.ArrayList<>(
                     Arrays.asList("100", "1000", "10000", "100000", "1000000"));
