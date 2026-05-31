@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import java.util.HashSet;
+
 /**
  * [SYNC-REDIS-001] Redis connection manager with connection pooling.
  * Implements connection pool, health checks, reconnection handling, and
@@ -362,6 +364,75 @@ public final class RedisManager implements AutoCloseable {
         }
         return total;
     }
+
+    public void addOnlinePlayer(String serverName, String playerName) {
+    if (jedisPool == null) {
+        return;
+    }
+
+    try (Jedis jedis = jedisPool.getResource()) {
+        jedis.sadd("syncmoney:online:" + serverName, playerName);
+    } catch (Exception e) {
+        debug("Failed to add online player: " + e.getMessage());
+    }
+}
+
+public void removeOnlinePlayer(String serverName, String playerName) {
+    if (jedisPool == null) {
+        return;
+    }
+
+    try (Jedis jedis = jedisPool.getResource()) {
+        jedis.srem("syncmoney:online:" + serverName, playerName);
+    } catch (Exception e) {
+        debug("Failed to remove online player: " + e.getMessage());
+    }
+}
+
+public void clearServerOnlinePlayers(String serverName) {
+    if (jedisPool == null) {
+        return;
+    }
+
+    try (Jedis jedis = jedisPool.getResource()) {
+        jedis.del("syncmoney:online:" + serverName);
+    } catch (Exception e) {
+        debug("Failed to clear online players: " + e.getMessage());
+    }
+}
+
+public Set<String> getAllOnlinePlayers() {
+    Set<String> players = new HashSet<>();
+
+    if (jedisPool == null) {
+        return players;
+    }
+
+    try (Jedis jedis = jedisPool.getResource()) {
+
+        ScanParams params = new ScanParams()
+                .match("syncmoney:online:*")
+                .count(50);
+
+        String cursor = ScanParams.SCAN_POINTER_START;
+
+        do {
+            ScanResult<String> scan = jedis.scan(cursor, params);
+
+            for (String key : scan.getResult()) {
+                players.addAll(jedis.smembers(key));
+            }
+
+            cursor = scan.getCursor();
+
+        } while (!cursor.equals("0"));
+
+    } catch (Exception e) {
+        debug("Failed to fetch online player list: " + e.getMessage());
+    }
+
+    return players;
+}
 
     @Override
     public void close() {
