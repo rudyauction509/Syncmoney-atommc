@@ -31,10 +31,19 @@ public final class PlayerQuitListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        var player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-        String name = player.getName();
+public void onPlayerQuit(PlayerQuitEvent event) {
+    var player = event.getPlayer();
+    UUID uuid = player.getUniqueId();
+    String name = player.getName();
+
+    Syncmoney sm = (Syncmoney) plugin;
+
+        if (sm.getRedisManager() != null) {
+            sm.getRedisManager().removeOnlinePlayer(
+                sm.getSyncmoneyConfig().getServerName(),
+                name.toLowerCase()
+            );
+        }
 
         nameResolver.invalidate(name);
 
