@@ -46,8 +46,9 @@ public final class PlayerJoinListener implements Listener {
 
           if (sm.getRedisManager() != null) {
             sm.getRedisManager().addOnlinePlayer(
-              sm.getSyncmoneyConfig().getServerName(),
-              name);
+            sm.getSyncmoneyConfig().getServerName(),
+            name.toLowerCase()
+            );
           }
 
         nameResolver.cacheName(name, uuid);
