@@ -138,16 +138,7 @@ public final class PayCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd,
             @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            String input = args[0].toLowerCase();
-
-            java.util.Set<String> suggestions = new java.util.HashSet<>();
-            plugin.getServer().getOnlinePlayers().forEach(p -> suggestions.add(p.getName()));
-            suggestions.addAll(nameResolver.getAllCachedNames());
-
-            return suggestions.stream()
-                    .filter(name -> name.toLowerCase().startsWith(input))
-                    .sorted()
-                    .toList();
+    return null;
         }
         if (args.length == 2) {
             java.util.List<String> suggestions = new java.util.ArrayList<>(
