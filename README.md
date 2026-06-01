@@ -29,6 +29,9 @@
 
 THIS IS A FORK MADE CUSTOM FOR THE ATOMMC MINECRAFT SERVER! NO SUPPORT WILL BE GIVEN!
 
+Changes: 
+- /pay tab complete now only shows players currently on the network, not a full cache list including thousands of scanner bots and banned players. 
+
 Syncmoney is a high-performance Minecraft economy plugin designed for multi-server networks. It synchronizes player balances across all servers in real-time using Redis Pub/Sub, with comprehensive protection against economic exploits and data loss.
 
 **Perfect for**: Survival servers, factions, SMPs, minigame networks, and any multi-server economy ecosystem.
